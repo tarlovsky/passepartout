@@ -70,20 +70,23 @@ module.exports = function(app, passport){
                 qrimage = require('qr-image')
                 ;
             
-            var encodedKey = base32.encode(utils.randomKey(10));
-            //cryptographically secure random bytes
+
+
+            var encodedKey = base32.encode(utils.randomKey(48));
+            
             const challenge = crypto.randomBytes(48).toString("hex");
+            var pin_len = utils.randomInt(6,9);
+            const awaited_answer = utils.passcodeGenerator(encodedKey, challenge, pin_len);
 
-            const awaited_answer = utils.passcodeGenerator(encodedKey, challenge, 6);
+
+            var otpUrl = 'otpauth://hotp/'+ 'programist:' + req.user.email + 
+            '?secret=' + encodedKey + 
+            '&challange=' + challenge + 
+            '&issuer=programist' + 
+            '&pinlength=' + pin_len;
             
+            var qr_image_data = new Buffer(qrimage.imageSync(otpUrl, {type:'png'})).toString('base64');
 
-            var otpUrl = 'otpauth://hotp/'+ 'programist:' + req.user.email + '?secret=' + encodedKey + '&challange=' + challenge;
-            //var qrImage = 'https://chart.googleapis.com/chart?chs=166x166&chld=L|0&cht=qr&chl=' + encodeURIComponent(otpUrl);
-            
-            var qrcode = qrimage.imageSync(otpUrl, {type:'png'});
-
-    
-        
             Devices.find({uid: req.user._id}, function(err, obj){
                 if (err) { return next(err); }
                 if(obj.length == 0){
@@ -102,11 +105,10 @@ module.exports = function(app, passport){
                 
             })
 
-
             res.render('attach-device', {
                 layout: 'main',
                 user: req.user,
-                qr: new Buffer(qrcode).toString('base64')
+                qr: qr_image_data
             })
         }else{
             res.redirect('/')

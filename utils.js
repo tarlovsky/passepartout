@@ -5,7 +5,6 @@ var randomNumber = require("random-number-csprng");
 exports.randomKey = function(len) {
   //https://gist.github.com/joepie91/7105003c3b26e65efcea63f3db82dfba
   //cryptographically safe pseudo random number generator
-  
   var bytes = crypto.randomBytes(len || 32);
   var buf = [],
       chars = 'abcdefghijklmnopqrstuvwxyz0123456789',
@@ -16,7 +15,7 @@ exports.randomKey = function(len) {
   for (var i = 0, l = bytes.length; i < l; i++) {
     output += chars[Math.floor(bytes[i] / 255.0 * (chars.length - 1))];
   }
-  console.log(output)
+  
   return output;
 };
   
@@ -26,13 +25,13 @@ exports.getChallenge = function(){
 
 exports.randomInt = function(min, max){
   var b = crypto.randomBytes(8);
-  (function(b) {
-    var hex = b.toString('hex');
-    var integer = parseInt(hex, 16);
-    var random = integer / 0xffffffffffffffff;
-    console.log(random)
-    return random;
-  })(b);
+  var hex = b.toString('hex');
+  var integer = parseInt(hex, 16);
+  //removing bias
+  //https://gist.github.com/joepie91/7105003c3b26e65efcea63f3db82dfba
+  //https://stackoverflow.com/questions/23505071/is-this-a-cryptographically-secure-method-to-generate-a-random-number-in-node-js
+  var random = integer / 0xffffffffffffffff;
+  return parseInt(Math.floor((random * (max - min + 1) + min)), 10);
 }
 
 exports.passcodeGenerator = function(key, challenge, passCodeLength){
@@ -55,7 +54,6 @@ exports.passcodeGenerator = function(key, challenge, passCodeLength){
       (digest[offset + 3] & 0xff);
   
   // left-pad code
-  console.log(passCodeLength)
   if(passCodeLength != null || passCodeLength < PASSCODE_LENGTH || passCodeLength > MAX_PASSCODE_LENGTH){
     passCodeLength = 6;
   }
