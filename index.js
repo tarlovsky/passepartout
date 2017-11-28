@@ -16,8 +16,6 @@ var key = fs.readFileSync('encryption/localhost.key.pem');
 var cert = fs.readFileSync('encryption/localhost.cert.pem');
 var ca = fs.readFileSync('encryption/ca-chain.cert.pem');
 
-var port = process.env.PORT || 8080;
-
 var mongoose = require('mongoose');
 var configDB = require('./config/database.js');
 mongoose.connect(configDB.url);
@@ -60,5 +58,7 @@ app.use(passport.session());
 app.use(app.router);
 
 require('./routes.js')(app, passport);
-https.createServer(options, app).listen(port);
+var server = http.Server(app);
+var port = process.env.PORT || 8080;
+server.listen(port);
 console.log("Started on port: " + port);
