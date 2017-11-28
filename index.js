@@ -51,10 +51,11 @@ app.use(express.static('public'))
 app.use(express.cookieParser());
 app.use(bodyparser());
 app.use(express.methodOverride());
-app.use(session({secret: '12345678aA!'}));
+app.use(session({cookie: {maxAge: 6000}, secret: '12345678aA!'}));
+app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(flash());
+
 app.use(app.router);
 
 

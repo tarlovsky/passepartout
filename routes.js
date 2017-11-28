@@ -57,8 +57,7 @@ module.exports = function(app, passport){
     app.get('/user-account', isLoggedIn, function (req, res, next) {
         Device.find({uid: req.user._id}, function(err, myDevices){
             if (err) { return next(err); }
-            
-            res.render('user-account', {layout: 'main', user: req.user, devices: myDevices})
+            res.render('user-account', {layout: 'main', user: req.user, devices: myDevices, messages: req.flash('deviceAttachMesage')})
         })
     })
     
@@ -87,11 +86,11 @@ module.exports = function(app, passport){
                 key: secretKey,
                 uid: req.user._id,
                 confirmed: false,
-                first_awaited_answer: awaited_answer
+                first_awaited_answer: awaited_answer.toString()
             });
-
+            
             var did = deviceToInsert._id;
-            console.log(did)
+            
             deviceToInsert.save(function(err) {
                 if (err){throw err;}
             });
@@ -137,26 +136,20 @@ module.exports = function(app, passport){
             
             var did = req.body.devid;
             var device_name = req.body.devname;
-
             var user_answer = req.body.answer;
-
-            console.log(current_user_id+' '+current_user_email+' ' + did +' '+ user_answer)
 
             if(current_user_id && did && user_answer){
                 //up
                 Device.findOne({_id: did, uid: current_user_id}, function(err, obj){
-                    console.log('object')
-                    console.log(obj)
+                    
+                    
                     if (err) { return next(err); }
                     
                     //the user had one minute to do this
-                    console.log(user_answer + " " + obj.first_awaited_answer)
-                    console.log((new Date() - new Date(obj.create_at)) + " " + (1012 * 60))
-                    if( (user_answer.toString() == obj.first_awaited_answer.toString()) && ((new Date() - new Date(obj.create_at)) < (1012 * 60)) ){
-                        obj.update({ _id: did, uid: current_user_id  }, { $set: { confirmed: true, deviceName: device_name } }, function(){
-                            console.log('UPDATINGNIASDOIASDOAISJD')
-                            res.flash('deviceAttachMesage', 'Device ' + did + ' registered sucessefully!')
-                            res.redirect(303, '/user-account')
+                    if( (user_answer == obj.first_awaited_answer) && ((new Date() - new Date(obj.created_at)) < (1012 * 60)) ){
+                        Device.update({ _id: did, uid: current_user_id  }, { $set: { confirmed: true, deviceName: device_name } }, function(){
+                            req.flash('deviceAttachMesage', 'Device ' + device_name + ' registered sucessefully!')
+                            res.redirect(303, '/user-account');
                         });
                     }else{
                         //ask user to start over because he missed the window

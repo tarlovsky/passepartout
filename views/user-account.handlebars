@@ -10,21 +10,23 @@
         <div class="col-sm-8 blog-main">
 
           <div class="blog-post">
-            {{#if message}}
-              <div class="alert">{{message}}</div>
+
+            {{#if messages}}
+              <div class="alert bg-info">{{messages}}</div>
             {{/if}}
+
             <p class="blog-post-meta">
-              {{user._id}}
-              {{user.email}}
+              Signed in as
+              <strong>{{user.email}}</strong>
             </p>
             
             <!--<p class="blog-post-meta">Last access January 1, 2014 by <a href="#">Mark</a></p>-->
-            
+            <p><a href="/attach-device">Attach</a> or detatch your authentication devices here.</p>
             {{#each devices}}
               <pre>{{deviceName}}<br/><code>Added: {{created_at}} </code></pre>
             {{/each}}
 
-            <p>View, <a href="/attach-device">attach</a> or detatch your authentication devices here.</p>
+            
             
           </div><!-- /.blog-post -->
 
