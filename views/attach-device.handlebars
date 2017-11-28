@@ -19,12 +19,34 @@
                 <img src="data:image/png;base64,{{qr}}"/>
             </div>
             <p>Don't worry, the system will <strong>only register your device</strong> as a second factor of authentication <strong>once you've answerd:</strong></p>
+            <p id="timer-text">Hurry you only have <strong id="timer">60</strong> seconds!</p>
+            <script type="text/javascript">
+                var el = document.getElementById("timer"),
+                    secs = 60;
 
-    
+                function countDown() {
+                    if (secs) {
+                        setTimeout(countDown, 1000);
+                    }
+                    el.innerHTML = secs;
+                    secs -= 1;
+                    if(secs == 0){
+                        document.getElementById("timer-text").innerHTML = "You're out of time. Please refresh the page to generate a new key!";
+                    }
+                }
+
+                countDown();
+            </script>
             <form class="form-inline" action="do-attach-device" method="post">
-                <div class="form-group ">
+                <div class="form-group">
                     <label for="answer" class="sr-only">Answer</label>
-                    <input type="text" class="form-control" name="answer" id="answer" placeholder="Code from device">
+                    <input type="text" class="form-control" name="answer" value="{{answer}}" id="answer" placeholder="Code from device">
+                    <input type="hidden" name="devid" value="{{devid}}"/>
+                    <!--<input type="hidden" name="key" value={{!key}}/>-->
+                </div>
+                <div class="form-group">
+                    <label for="devname" class="sr-only">Device Name</label>
+                    <input type="text" class="form-control" name="devname" id="devname" placeholder="Nickname for your device">
                 </div>
                 <button type="submit" class="btn btn-primary">Attach device</button>
             </form>

@@ -10,24 +10,30 @@
         <div class="col-sm-8 blog-main">
 
           <div class="blog-post">
+            {{#if message}}
+              <div class="alert">{{message}}</div>
+            {{/if}}
             <p class="blog-post-meta">
               {{user._id}}
               {{user.email}}
             </p>
-            <p class="blog-post-meta">Last access January 1, 2014 by <a href="#">Mark</a></p>
-            <p>View, <a href="/attach-device">attach</a> or detatch your authentication devices here.</p>
-            <pre><code>1. Android Samsung S7 Edge exynos 8990 </code></pre>
-            <pre><code>2. Apple iPad pro 9.7 128GB A9x </code></pre>
+            
+            <!--<p class="blog-post-meta">Last access January 1, 2014 by <a href="#">Mark</a></p>-->
+            
+            {{#each devices}}
+              <pre>{{deviceName}}<br/><code>Added: {{created_at}} </code></pre>
+            {{/each}}
 
+            <p>View, <a href="/attach-device">attach</a> or detatch your authentication devices here.</p>
             
           </div><!-- /.blog-post -->
 
-          <nav>
+          <!--<nav>
             <ul class="pager">
               <li><a href="#">Previous</a></li>
               <li><a href="#">Next</a></li>
             </ul>
-          </nav>
+          </nav>-->
 
         </div><!-- /.blog-main -->
 

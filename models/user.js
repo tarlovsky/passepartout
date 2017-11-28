@@ -23,7 +23,7 @@ userSchema.methods.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
 };
 
-userSchema.pre('save', function(next){
+userSchema.pre('validate', function(next){
     var currentDate = new Date();
     
     this.updated_at = currentDate;

@@ -18,8 +18,7 @@ var cert = fs.readFileSync( 'encryption/localhost.cert.pem' );
 var ca = fs.readFileSync( 'encryption/ca-chain.cert.pem' );
 
 var mongoose = require('mongoose');
-
-configDB = require('./config/database.js');
+var configDB = require('./config/database.js');
 mongoose.connect(configDB.url);
 
 require('./config/passport')(passport);
@@ -48,7 +47,7 @@ var handlebars = require('express3-handlebars').create({
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 app.use(express.static('public'))
-app.use(express.logger());
+//app.use(express.logger());
 app.use(express.cookieParser());
 app.use(bodyparser());
 app.use(express.methodOverride());
@@ -57,7 +56,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
 app.use(app.router);
-
 
 
 require('./routes.js')(app, passport);

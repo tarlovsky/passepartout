@@ -1,3 +1,8 @@
+var Device = require('./models/device')
+var mongoose = require('mongoose');
+var configDB = require('./config/database.js');
+mongoose.connect(configDB.url);
+
 
 function isLoggedIn(req, res, next) {
 
@@ -50,11 +55,11 @@ module.exports = function(app, passport){
     })
     
     app.get('/user-account', isLoggedIn, function (req, res, next) {
-        res.render('user-account', {
-                layout: 'main',
-                user: req.user
-            }
-        )
+        Device.find({uid: req.user._id}, function(err, myDevices){
+            if (err) { return next(err); }
+            
+            res.render('user-account', {layout: 'main', user: req.user, devices: myDevices})
+        })
     })
     
     app.get('/attach-device', function (req, res, next) {
@@ -62,7 +67,7 @@ module.exports = function(app, passport){
 
             var MAX_PASSCODE_LENGTH = 6,
                 User = require('./models/user'),
-                Devices = require('./models/device'),
+                Device = require('./models/device'),
                 Token = require('./models/token'),
                 utils = require("./utils"),
                 base32 = require('thirty-two')
@@ -71,44 +76,50 @@ module.exports = function(app, passport){
                 ;
             
 
-
-            var encodedKey = base32.encode(utils.randomKey(48));
+            var secretKey = utils.randomKey(48);
             
-            const challenge = crypto.randomBytes(48).toString("hex");
+            const challenge = utils.getChallenge();
             var pin_len = utils.randomInt(6,9);
-            const awaited_answer = utils.passcodeGenerator(encodedKey, challenge, pin_len);
+            const awaited_answer = utils.passcodeGenerator(secretKey, challenge, pin_len);
+            
+            var deviceToInsert = new Device({
+                deviceName: "My First Authentication Device",
+                key: secretKey,
+                uid: req.user._id,
+                confirmed: false,
+                first_awaited_answer: awaited_answer
+            });
 
+            var did = deviceToInsert._id;
+            console.log(did)
+            deviceToInsert.save(function(err) {
+                if (err){throw err;}
+            });
 
+            // Generate qr for the user's device
             var otpUrl = 'otpauth://hotp/'+ 'programist:' + req.user.email + 
-            '?secret=' + encodedKey + 
+            '?secret=' + secretKey + 
             '&challange=' + challenge + 
             '&issuer=programist' + 
             '&pinlength=' + pin_len;
             
             var qr_image_data = new Buffer(qrimage.imageSync(otpUrl, {type:'png'})).toString('base64');
-
-            Devices.find({uid: req.user._id}, function(err, obj){
-                if (err) { return next(err); }
-                if(obj.length == 0){
-                    //user has no devices attached
-                }else{
-                    //user wants to attach a device
-                    console.log(obj)
-                    //TODO render a list of devices with a link underneeth to use that device
-                    if (obj.length > 1){
-                        //let him pick a device to login with
-                    }else{
-                        //only one device
-                        //make this work first
-                    }
-                }
-                
-            })
-
+            
+        
             res.render('attach-device', {
                 layout: 'main',
+                
+                //get user from session
                 user: req.user,
-                qr: qr_image_data
+
+                //nao passamos key
+                //passamos devid da base de dados. Registo ainda e unconfirmed
+                //e user deve ser checked quando fazemos 
+                //secretKey: secretKey, //reduce key usage, certainly in forms sent to client.
+                qr: qr_image_data,
+                devid: did,
+                //REMOVE PRODUCTION
+                answer: awaited_answer
             })
         }else{
             res.redirect('/')
@@ -116,12 +127,57 @@ module.exports = function(app, passport){
         }
     })
     
+    app.post('/do-attach-device', function(req, res){
+        if(req.user){
+            //var Device = require('./models/device')
+            // TODO implement csrf token protection
+            // var _csrf = req.body._csrf;
+            var current_user_id = req.user._id;
+            var current_user_email = req.user.email;
+            
+            var did = req.body.devid;
+            var device_name = req.body.devname;
+
+            var user_answer = req.body.answer;
+
+            console.log(current_user_id+' '+current_user_email+' ' + did +' '+ user_answer)
+
+            if(current_user_id && did && user_answer){
+                //up
+                Device.findOne({_id: did, uid: current_user_id}, function(err, obj){
+                    console.log('object')
+                    console.log(obj)
+                    if (err) { return next(err); }
+                    
+                    //the user had one minute to do this
+                    console.log(user_answer + " " + obj.first_awaited_answer)
+                    console.log((new Date() - new Date(obj.create_at)) + " " + (1012 * 60))
+                    if( (user_answer.toString() == obj.first_awaited_answer.toString()) && ((new Date() - new Date(obj.create_at)) < (1012 * 60)) ){
+                        obj.update({ _id: did, uid: current_user_id  }, { $set: { confirmed: true, deviceName: device_name } }, function(){
+                            console.log('UPDATINGNIASDOIASDOAISJD')
+                            res.flash('deviceAttachMesage', 'Device ' + did + ' registered sucessefully!')
+                            res.redirect(303, '/user-account')
+                        });
+                    }else{
+                        //ask user to start over because he missed the window
+                        Device.remove({_id: did, uid: current_user_id}).exec(function(err){
+                            if(err){throw err;}
+                            req.flash('deviceAttachMesage', 'Looks like you were too late or the answer was wrong, try again but this time faster!' );
+                            res.redirect(303, '/user-account');
+                        });
+                    }
+                    
+                })
+            }
+        }
+    })
+
     app.get('/register-user', function(req, res){
         if(req.user){
             res.redirect('/')
             return;
         }
-        res.render('register', { message: req.flash('signupMessage'), layout: 'layout-sign-in' })
+        res.render('register', { message: req.flash('signupMessage', 'Welcome to registration'), layout: 'layout-sign-in' })
     })
     
     // process the signup form
@@ -133,7 +189,6 @@ module.exports = function(app, passport){
 
     });
     
-
     app.post('/do-sign-in', passport.authenticate('local-login', {
         successRedirect : '/user-account', // redirect to the secure profile section
         failureRedirect : '/sign-in', // redirect back to the signup page if there is an error
