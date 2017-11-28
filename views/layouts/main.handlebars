@@ -41,7 +41,15 @@
           <a class="blog-nav-item" href="#">Press</a>
           <a class="blog-nav-item" href="#">New hires</a>
           <a class="blog-nav-item" href="#">About</a>
+          {{#if user._id}}
           <a class="blog-nav-item" href="user-account">User Account</a>
+          <form class="blog-nav-item" method="post" action="/sign-out">
+            <button class="blog-nav-item" type="submit">Sign out</button>
+          </form>
+          {{else}}
+          <a class="blog-nav-item" href="/sign-in">Sign In</a>
+          <a class="blog-nav-item" href="/register-user">Register</a>
+          {{/if}}
         </nav>
       </div>
     </div>
