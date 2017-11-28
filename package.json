@@ -3,9 +3,6 @@
     "version": "1.0.0",
     "description": "SIRS project",
     "main": "index.js",
-    "scripts": {
-        "start": "node index.js"
-    },
     "dependencies": {
         "bcrypt-nodejs": "0.0.3",
         "bluebird": "^3.5.1",
@@ -34,6 +31,7 @@
     },
     "devDependencies": {},
     "scripts": {
+        "start": "node index.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
