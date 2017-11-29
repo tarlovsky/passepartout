@@ -140,7 +140,7 @@ module.exports = function(app){
         if(password && rpassword && email){
             if(password != rpassword){
                 req.flash('signupMessage', 'Passwords do not match.');
-                res.redirect(303, '/register');
+                res.redirect(303, '/register-user');
             }
             User.findOne({ 'email' :  email }, function(err, user) {
                 // if there are any errors, return the error
@@ -157,11 +157,12 @@ module.exports = function(app){
                     newUser.email = email;
                     newUser.password = newUser.generateHash(password);
     
-                    newUser.save(function(err) {
+                    newUser.save(function(err, u) {
                         if (err)
                             throw err;
                         req.flash('deviceAttachMesage', 'User registered successfully. Welcome')
-                        res.redirect()
+                        req.session.user = u
+                        res.redirect(303, '/user-account')
                     });
                 }
     
@@ -234,7 +235,7 @@ module.exports = function(app){
         var devid = req.body.devid;
 
         Device.findOne({uid: userObject._id, _id: devid}, function(err, dev){
-            
+
             var deviceKey = dev.key
             const challenge = utils.getChallenge();
 
