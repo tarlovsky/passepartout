@@ -105,13 +105,17 @@ module.exports = function(passport){
                 if(val){
                     req.session.hasTwoFactor = true;
                 }
+                // all is well, return successful user
                 return done(null, user);
             }));
-            // all is well, return successful user
+            
             
         });
 
     }));
+    // passport.use('local-totp', new LocalStrategy({
+
+    // }))
     
 
 };

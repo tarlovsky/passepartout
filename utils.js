@@ -35,6 +35,10 @@ exports.randomInt = function(min, max){
 }
 
 exports.passcodeGenerator = function(key, challenge, passCodeLength){
+  
+  console.log(key)
+  console.log(challenge)
+  console.log(passCodeLength)
 
   var MAX_PASSCODE_LENGTH = 9,
       PASSCODE_LENGTH = 6,
@@ -42,16 +46,19 @@ exports.passcodeGenerator = function(key, challenge, passCodeLength){
 
   var hmac = crypto.createHmac('sha256', key);
   hmac.update(challenge);
-
   var digest = hmac.digest().toString('hex');
-  digest = new Buffer(digest);
-  var offset = digest[digest.length - 1] & 0xf;
-  
+
+  var byteArray = []
+  for (var i = 0; i < digest.length; ++i) {
+      byteArray.push(digest.charCodeAt(i) & 0xff)
+  }
+  // RFC for hotp code generation
   //https://tools.ietf.org/html/rfc4226#section-5.4
-  var code = (digest[offset] & 0x7f) << 24 |
-      (digest[offset + 1] & 0xff) << 16 |
-      (digest[offset + 2] & 0xff) << 8 |
-      (digest[offset + 3] & 0xff);
+  var offset = byteArray[byteArray.length - 1] & 0xf;
+  var code = (byteArray[offset] & 0x7f) << 24 |
+      (byteArray[offset + 1] & 0xff) << 16 |
+      (byteArray[offset + 2] & 0xff) << 8 |
+      (byteArray[offset + 3] & 0xff);
   
   // left-pad code
   if(passCodeLength == null || passCodeLength < PASSCODE_LENGTH || passCodeLength > MAX_PASSCODE_LENGTH){
