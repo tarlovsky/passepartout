@@ -54,11 +54,11 @@ exports.passcodeGenerator = function(key, challenge, passCodeLength){
       (digest[offset + 3] & 0xff);
   
   // left-pad code
-  if(passCodeLength != null || passCodeLength < PASSCODE_LENGTH || passCodeLength > MAX_PASSCODE_LENGTH){
+  if(passCodeLength == null || passCodeLength < PASSCODE_LENGTH || passCodeLength > MAX_PASSCODE_LENGTH){
     passCodeLength = 6;
   }
-
+  
   code = new Array(passCodeLength + 1).join('0') + code.toString(10);
-  return code.substr(-PASSCODE_LENGTH);
+  return code.substr(-passCodeLength);
 }
 

@@ -5,10 +5,10 @@ var bodyparser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var http = require('http');
 var mongoose = require('mongoose');
+var flash = require('connect-flash');
 var passport = require('passport');
 var session = require('express-session');
 var https = require('https');
-var flash = require('connect-flash');
 var fs = require('fs')
 var qr = require('qr-image');
 var base32 = require('thirty-two');
@@ -51,7 +51,7 @@ app.use(express.static('public'))
 app.use(express.cookieParser());
 app.use(bodyparser());
 app.use(express.methodOverride());
-app.use(session({cookie: {maxAge: 6000}, secret: '12345678aA!'}));
+app.use(session({secret: '12345678aA!'}));
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());

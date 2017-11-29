@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var bcrypt   = require('bcrypt-nodejs');
+var Devices  = require('./device');
 //var passportLocalMongoose = require('passport-local-mongoose');
 
 var userSchema = new mongoose.Schema({
@@ -22,6 +23,15 @@ userSchema.methods.generateHash = function(password) {
 userSchema.methods.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
 };
+
+userSchema.methods.has2fa = function(callback){
+
+    Devices.find({uid: this._id}).exec()      
+    .then(function(data){
+        console.log(data)
+        callback(data.length > 0)
+    })
+}
 
 userSchema.pre('validate', function(next){
     var currentDate = new Date();

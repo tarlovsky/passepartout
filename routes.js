@@ -183,11 +183,16 @@ module.exports = function(app, passport){
     });
     
     app.post('/do-sign-in', passport.authenticate('local-login', {
-        successRedirect : '/user-account', // redirect to the secure profile section
+        //successRedirect : '/user-account', // redirect to the secure profile section
         failureRedirect : '/sign-in', // redirect back to the signup page if there is an error
         failureFlash : true // allow flash messages
-    }), function(){
-
+    }), (req, res) => {
+        console.log(req.session.hasTwoFactor)
+        if(req.session.hasTwoFactor){
+            res.redirect('/user-account')
+        }else{
+            res.redirect('/user-account')
+        }
     });
 
     app.get('/sign-in', function (req, res) {
@@ -217,7 +222,13 @@ module.exports = function(app, passport){
     // Logout endpoint
     app.post('/sign-out', function (req, res) {
         req.logout();
+        req.session.destroy();
         res.redirect('/');
     });
     
 };
+
+function ensureSecondFactor(req, res, next) {
+    if (req.session.hasTwoFactor == true) { return next(); }
+    res.redirect('/login-otp')
+}
