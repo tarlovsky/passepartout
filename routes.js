@@ -156,7 +156,9 @@ module.exports = function(app) {
                 }
             }
             if (error) {
-                throw error;
+                console.error(error);
+                res.redirect('/sign-in');
+                return;
             }
         })
 
