@@ -12,7 +12,6 @@ var userSchema = new mongoose.Schema({
     twofa: { type: Boolean, default: false }
 });
 
-
 userSchema.pre('validate', function(next){
     var currentDate = new Date();
     
@@ -68,6 +67,7 @@ userSchema.statics.authenticate = function (email, password, callback) {
           err.status = 401;
           return callback(err);
         }
+        //bcrypt pulls out the salt of the password and checks hash agains hash, never plaintext
         bcrypt.compare(password, user.password, function (err, result) {
           if (result === true) {
             //check if user has 2fa
@@ -75,17 +75,33 @@ userSchema.statics.authenticate = function (email, password, callback) {
                 if(result){
                     return callback(null, user, 'totp');
                 }else{
+                    //user with no 2fa
                     return callback(null, user, null);
                 }
             })
-            //user with no 2fa
-            
           } else {
             return callback(null, false, null);
           }
         })
       });
-  }
+}
+userSchema.statics.register = function(e, p, rp, callback){
+    this.findOne({email: e}).exec(function(err, user){
+        if (user) {
+            return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
+        } else {
 
+            var newUser = new User();
+            newUser.email = email;
+            newUser.password = newUser.generateHash(password);
+            
+            newUser.save(function(err) {
+                if (err)
+                    throw err;
+                return done(null, newUser);
+            });
+        }
+    })
+}
 module.exports = mongoose.model('User', userSchema);
 

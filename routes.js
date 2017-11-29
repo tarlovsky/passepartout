@@ -9,7 +9,7 @@ var qrimage = require('qr-image');
 var crypto = require('crypto');
 const MAX_WAIT = 1012 * 60;
 
-module.exports = function(app, passport){
+module.exports = function(app){
     
     app.get('/', function (req, res) {
         res.render('homepage', {
@@ -19,9 +19,12 @@ module.exports = function(app, passport){
     })
     
     app.get('/user-account', ensureLoggedIn, function (req, res, next) {
-        Device.find({uid: req.user._id}, function(err, myDevices){
+        console.log('HASJDOAISJD')
+        var user = req.session.user;
+        console.log(user)
+        Device.find({uid: user._id}, function(err, myDevices){
             if (err) { return next(err); }
-            res.render('user-account', {layout: 'main', user: req.user, devices: myDevices, messages: req.flash('deviceAttachMesage')})
+            res.render('user-account', {layout: 'main', user: user, devices: myDevices, messages: req.flash('deviceAttachMesage')})
         })
     })
     
@@ -34,7 +37,7 @@ module.exports = function(app, passport){
                 crypto = require('crypto'),
                 qrimage = require('qr-image')
                 ;
-            
+            var u = req.session.user;
 
             var secretKey = utils.randomKey(48);
             
@@ -45,7 +48,7 @@ module.exports = function(app, passport){
             var deviceToInsert = new Device({
                 deviceName: "My First Authentication Device",
                 key: secretKey,
-                uid: req.user._id,
+                uid: u._id,
                 confirmed: false,
                 first_awaited_answer: awaited_answer.toString()
             });
@@ -57,7 +60,7 @@ module.exports = function(app, passport){
             });
 
             // Generate qr for the user's device
-            var otpUrl = 'otpauth://hotp/'+ 'programist:' + req.user.email + 
+            var otpUrl = 'otpauth://hotp/'+ 'programist:' + u.email + 
             '?secret=' + secretKey + 
             '&challange=' + challenge + 
             '&issuer=programist' + 
@@ -65,12 +68,11 @@ module.exports = function(app, passport){
             
             var qr_image_data = new Buffer(qrimage.imageSync(otpUrl, {type:'png'})).toString('base64');
             
-        
             res.render('attach-device', {
                 layout: 'main',
                 
                 //get user from session
-                user: req.user,
+                user: u,
 
                 //nao passamos key
                 //passamos devid da base de dados. Registo ainda e unconfirmed
@@ -85,12 +87,13 @@ module.exports = function(app, passport){
     })
     
     app.post('/do-attach-device', ensureLoggedIn, function(req, res){
-        if(req.user){
+        var user = req.session.user;
+        if(user){
             //var Device = require('./models/device')
             // TODO implement csrf token protection
             // var _csrf = req.body._csrf;
-            var current_user_id = req.user._id;
-            var current_user_email = req.user.email;
+            var current_user_id = user._id;
+            var current_user_email = user.email;
             
             var did = req.body.devid;
             var device_name = req.body.devname;
@@ -122,7 +125,7 @@ module.exports = function(app, passport){
     })
 
     app.get('/register-user', function(req, res){
-        if(req.user){
+        if(req.session.user){
             res.redirect('/')
             return;
         }
@@ -130,22 +133,28 @@ module.exports = function(app, passport){
     })
     
     // process the signup form
-    app.post('/do-register-user', passport.authenticate('local-signup', {
-        successRedirect : '/', // redirect to the secure profile section
-        failureRedirect : '/register-user', // redirect back to the signup page if there is an error
-        failureFlash : true // allow flash messages
-    }));
+    app.post('/do-register-user', function(req, res){
+        User.register(req.body.email, req.body.password, req.body.repeatpassword, function(){
+            
+        })
+    });
     
     app.post('/do-sign-in', function(req, res){
         
         User.authenticate(req.body.email, req.body.password, function(error, result, info){
             if(result){
-                if(info != null && info == 'totp'){
+                if(info != null && typeof info == 'string'){//info contains 2fa method name
                     req.session.twoFactorPending = info
                     req.session.pendingUser = result
                     res.redirect('/device-choice')
+                    return;
+                }else{
+                    console.log(result)
+                    req.session.user = result
+                    console.log(req.session.user)
+                    res.redirect(303, '/user-account')
+                    return;
                 }
-                res.redirect('/user-acount')
             }
             if(error){
                 throw error;
@@ -161,7 +170,6 @@ module.exports = function(app, passport){
     // Logout endpoint
     app.post('/sign-out', function (req, res) {
         req.session.destroy();
-        req.logout();
         res.redirect('/');
     });
     
@@ -176,6 +184,17 @@ module.exports = function(app, passport){
         }
     })
 
+    app.post('/detatch-device', ensureLoggedIn, function(req, res){
+        Device.findOne({_id: req.body.devid}, function(err, d){
+            if(d.uid.toString() == req.session.user._id.toString()){
+                d.remove(function(err){
+                    req.flash('deviceAttachMesage', 'Device ' + d.deviceName + ' removed successfully')
+                    res.redirect(303, '/user-account')
+                })
+            }
+        })
+    })
+
     app.post('/do-second-factor', ensurePendingUser, function(req, res){
         
         var method = req.twoFactorPending;//generally totp
@@ -186,8 +205,6 @@ module.exports = function(app, passport){
             dev = dev[0]
             var deviceKey = dev.key
             const challenge = utils.getChallenge();
-
-            console.log(challenge)
 
             var pin_len = utils.randomInt(6,9)
             const awaited_answer = utils.passcodeGenerator(deviceKey, challenge, pin_len);
@@ -211,8 +228,7 @@ module.exports = function(app, passport){
                     throw err;
                 }
             })
-            console.log(t._id)
-
+            
             res.render('two-factor-login', {
                 layout: 'layout-sign-in', 
                 email: userObject.email, 
@@ -236,14 +252,19 @@ module.exports = function(app, passport){
 
             if( t.awaitedAnswer.toString() == ans.toString()){
                 if(new Date() - t.created_at < MAX_WAIT){
+
                     req.session.user = req.session.pendingUser;
+                    delete req.session.pendingUser;
                     req.flash('deviceAttachMesage', 'Congrats, You have sucessefully authenticated with your device!')
                     res.redirect(303, '/user-account');
-                }else{
-                    req.flash('deviceAttachMesage', 'Unfortunately your authentication token has expired, please try again!')
 
+                }else{
+                    t.remove()
+                    req.flash('deviceAttachMesage', 'Unfortunately your authentication token has expired, please try again!')
+                    res.redirect(303, '/login');    
                 }
             }else{
+                //wrong answer
                 //don't want useless token to interfere
                 t.remove()
                 res.redirect(303, '/login');
@@ -253,7 +274,7 @@ module.exports = function(app, passport){
 };
 
 function ensureLoggedIn(req, res, next) {
-    if (req.session && req.session.user) {
+    if (req.session.user) {
       return next();
     } else {
       var err = new Error('You must be logged in to view this page.');
