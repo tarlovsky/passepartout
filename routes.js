@@ -19,9 +19,9 @@ module.exports = function(app){
     })
     
     app.get('/user-account', ensureLoggedIn, function (req, res, next) {
-        console.log('HASJDOAISJD')
+    
         var user = req.session.user;
-        console.log(user)
+
         Device.find({uid: user._id}, function(err, myDevices){
             if (err) { return next(err); }
             res.render('user-account', {layout: 'main', user: user, devices: myDevices, messages: req.flash('deviceAttachMesage')})
@@ -129,14 +129,46 @@ module.exports = function(app){
             res.redirect('/')
             return;
         }
-        res.render('register', { message: req.flash('signupMessage', 'Welcome to registration'), layout: 'layout-sign-in' })
+        res.render('register', { message: req.flash('signupMessage'), layout: 'layout-sign-in' })
     })
     
     // process the signup form
     app.post('/do-register-user', function(req, res){
-        User.register(req.body.email, req.body.password, req.body.repeatpassword, function(){
-            
-        })
+        var email = req.body.email,
+            password = req.body.password,
+            rpassword = req.body.repeatpassword;
+        if(password && rpassword && email){
+            if(password != rpassword){
+                req.flash('signupMessage', 'Passwords do not match.');
+                res.redirect(303, '/register');
+            }
+            User.findOne({ 'email' :  email }, function(err, user) {
+                // if there are any errors, return the error
+                if (err)
+                    return done(err);
+    
+                if (user) {
+                    req.flash('signupMessage', 'That email is already taken.');
+                    res.redirect(303, '/register-user');
+                } else {
+    
+                    var newUser = new User();
+    
+                    newUser.email = email;
+                    newUser.password = newUser.generateHash(password);
+    
+                    newUser.save(function(err) {
+                        if (err)
+                            throw err;
+                        req.flash('deviceAttachMesage', 'User registered successfully. Welcome')
+                        res.redirect()
+                    });
+                }
+    
+            });
+        }
+        
+
     });
     
     app.post('/do-sign-in', function(req, res){
@@ -201,8 +233,8 @@ module.exports = function(app){
         var userObject = req.session.pendingUser;
         var devid = req.body.devid;
 
-        Device.find({uid: userObject._id, _id: devid}, function(err, dev){
-            dev = dev[0]
+        Device.findOne({uid: userObject._id, _id: devid}, function(err, dev){
+            
             var deviceKey = dev.key
             const challenge = utils.getChallenge();
 
@@ -210,8 +242,7 @@ module.exports = function(app){
             const awaited_answer = utils.passcodeGenerator(deviceKey, challenge, pin_len);
             // Generate qr for the screen
             var otpUrl = 'otpauth://hotp/'+ 'programist:' + req.session.pendingUser.email + 
-            '?secret=' + deviceKey + 
-            '&challange=' + challenge + 
+            '?challange=' + challenge + 
             '&issuer=programist' + 
             '&pinlength=' + pin_len;
             const qr_image_data = new Buffer(qrimage.imageSync(otpUrl, {type:'png'})).toString('base64');
