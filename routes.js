@@ -97,7 +97,7 @@ module.exports = function(app, passport) {
             // Generate qr for the user's device
             var otpUrl = 'otpauth://hotp/' + 'programist:' + req.user.email +
                 '?secret=' + secretKey +
-                '&challange=' + challenge +
+                '&challenge=' + challenge +
                 '&issuer=programist' +
                 '&pinlength=' + pin_len;
 
