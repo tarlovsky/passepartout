@@ -1,48 +1,8 @@
 var Device = require('./models/device')
 var mongoose = require('mongoose');
 var configDB = require('./config/database.js');
+var loggedin = require('connect-ensure-login');
 mongoose.connect(configDB.url);
-
-
-function isLoggedIn(req, res, next) {
-
-    // if user is authenticated in the session, carry on 
-    if (req.isAuthenticated())
-        return next();
-
-    // if they aren't redirect them to the home page
-    res.redirect('/');
-}
-
-var keys = {}
-
-function findById(id, fn) {
-    var idx = id - 1;
-    if (users[idx]) {
-        fn(null, users[idx]);
-    } else {
-        fn(new Error('User ' + id + ' does not exist'));
-    }
-}
-
-function findByUsername(username, fn) {
-    for (var i = 0, len = users.length; i < len; i++) {
-        var user = users[i];
-        if (user.username === username) {
-            return fn(null, user);
-        }
-    }
-    return fn(null, null);
-}
-
-function findKeyForUserId(id, fn) {
-    return fn(null, keys[id]);
-}
-
-function saveKeyForUserId(id, key, fn) {
-    keys[id] = key;
-    return fn(null);
-}
 
 
 module.exports = function(app, passport){
@@ -54,16 +14,15 @@ module.exports = function(app, passport){
         })
     })
     
-    app.get('/user-account', isLoggedIn, function (req, res, next) {
+    app.get('/user-account', loggedin.ensureLoggedIn('/sign-in'), function (req, res, next) {
         Device.find({uid: req.user._id}, function(err, myDevices){
             if (err) { return next(err); }
             res.render('user-account', {layout: 'main', user: req.user, devices: myDevices, messages: req.flash('deviceAttachMesage')})
         })
     })
     
-    app.get('/attach-device', function (req, res, next) {
-        if(req.user){
-
+    app.get('/attach-device', loggedin.ensureLoggedIn('/sign-in'), function (req, res, next) {
+        
             var MAX_PASSCODE_LENGTH = 6,
                 User = require('./models/user'),
                 Device = require('./models/device'),
@@ -120,13 +79,10 @@ module.exports = function(app, passport){
                 //REMOVE PRODUCTION
                 answer: awaited_answer
             })
-        }else{
-            res.redirect('/')
-            return;
-        }
+        
     })
     
-    app.post('/do-attach-device', function(req, res){
+    app.post('/do-attach-device', loggedin.ensureLoggedIn('/sign-in'), function(req, res){
         if(req.user){
             //var Device = require('./models/device')
             // TODO implement csrf token protection
@@ -186,10 +142,12 @@ module.exports = function(app, passport){
         //successRedirect : '/user-account', // redirect to the secure profile section
         failureRedirect : '/sign-in', // redirect back to the signup page if there is an error
         failureFlash : true // allow flash messages
-    }), (req, res) => {
+    }), function(req, res){
+        
         console.log(req.session.hasTwoFactor)
+
         if(req.session.hasTwoFactor){
-            res.redirect('/user-account')
+            res.redirect('/device-choice')
         }else{
             res.redirect('/user-account')
         }
@@ -197,25 +155,13 @@ module.exports = function(app, passport){
 
     app.get('/sign-in', function (req, res) {
         
-        if(req.user){
-            res.redirect('/')
-            return;
-        }
         //TODO check if user posesses 2fa and display accordingly
         //in database
         var userHas2fa = true;
         //if user has more than one device
         //let him pick one
         
-        // 2fa_in_progress
-        // id#ts#challenge#devid#uid
-        
-        /*if(userHas2fa){
-            var qr_svg = qr.image('I love QR!', { type: 'svg' });
-            qr_svg.pipe(require('fs').createWriteStream('i_love_qr.svg'));
-            var svg_string = qr.imageSync('I love QR!', { type: 'svg' });
-            res.render('sign-in-2fa', { layout: 'layout-sign-in' })
-        }*/
+    
         res.render('sign-in', { layout: 'layout-sign-in', message: req.flash('loginMessage')})
     })
    
@@ -226,9 +172,19 @@ module.exports = function(app, passport){
         res.redirect('/');
     });
     
+    app.get('/device-choice', loggedin.ensureLoggedIn('/sign-in'), function(req, res){
+        Device.find({uid: req.user._id}, function(err, devlist){
+            res.render('device-choice', { layout: 'layout-sign-in' ,devices: devlist })
+        })
+    })
+
 };
 
-function ensureSecondFactor(req, res, next) {
-    if (req.session.hasTwoFactor == true) { return next(); }
-    res.redirect('/login-otp')
+
+function ensureTwoFactor(req, res, next){
+    if(req.session.hasTwoFactor == 'hotp'){
+        res.redirect(303, '/device-choice');
+    }else{
+        next();
+    }
 }

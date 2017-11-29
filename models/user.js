@@ -28,7 +28,6 @@ userSchema.methods.has2fa = function(callback){
 
     Devices.find({uid: this._id}).exec()      
     .then(function(data){
-        console.log(data)
         callback(data.length > 0)
     })
 }
