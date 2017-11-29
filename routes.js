@@ -14,7 +14,7 @@ module.exports = function(app, passport){
         })
     })
     
-    app.get('/user-account', loggedin.ensureLoggedIn('/sign-in'), function (req, res, next) {
+    app.get('/user-account', loggedin.ensureLoggedIn('/sign-in'), ensureSecondFactor, function (req, res, next) {
         Device.find({uid: req.user._id}, function(err, myDevices){
             if (err) { return next(err); }
             res.render('user-account', {layout: 'main', user: req.user, devices: myDevices, messages: req.flash('deviceAttachMesage')})
@@ -82,7 +82,7 @@ module.exports = function(app, passport){
         
     })
     
-    app.post('/do-attach-device', loggedin.ensureLoggedIn('/sign-in'), function(req, res){
+    app.post('/do-attach-device', loggedin.ensureLoggedIn('/sign-in'), ensureSecondFactor, function(req, res){
         if(req.user){
             //var Device = require('./models/device')
             // TODO implement csrf token protection
@@ -121,7 +121,7 @@ module.exports = function(app, passport){
         }
     })
 
-    app.get('/register-user', function(req, res){
+    app.get('/register-user',ensureSecondFactor, function(req, res){
         if(req.user){
             res.redirect('/')
             return;
@@ -134,57 +134,66 @@ module.exports = function(app, passport){
         successRedirect : '/', // redirect to the secure profile section
         failureRedirect : '/register-user', // redirect back to the signup page if there is an error
         failureFlash : true // allow flash messages
-    }), function(){
-
-    });
+    }));
     
     app.post('/do-sign-in', passport.authenticate('local-login', {
-        //successRedirect : '/user-account', // redirect to the secure profile section
+        successRedirect : '/user-account', // redirect to the secure profile section
         failureRedirect : '/sign-in', // redirect back to the signup page if there is an error
         failureFlash : true // allow flash messages
     }), function(req, res){
-        
+
+        console.log(req.user)
         console.log(req.session.hasTwoFactor)
 
-        if(req.session.hasTwoFactor){
+        if(req.session.hasTwoFactor == true){
             res.redirect('/device-choice')
         }else{
             res.redirect('/user-account')
         }
+
     });
 
-    app.get('/sign-in', function (req, res) {
-        
-        //TODO check if user posesses 2fa and display accordingly
-        //in database
-        var userHas2fa = true;
-        //if user has more than one device
-        //let him pick one
-        
-    
+    app.get('/sign-in', function (req, res) {    
         res.render('sign-in', { layout: 'layout-sign-in', message: req.flash('loginMessage')})
     })
    
     // Logout endpoint
     app.post('/sign-out', function (req, res) {
-        req.logout();
         req.session.destroy();
+        req.logout();
         res.redirect('/');
     });
     
     app.get('/device-choice', loggedin.ensureLoggedIn('/sign-in'), function(req, res){
+        passport.authenticate('sirs-login', function(){
+
+        })
+        
         Device.find({uid: req.user._id}, function(err, devlist){
-            res.render('device-choice', { layout: 'layout-sign-in' ,devices: devlist })
+            res.render('device-choice', { layout: 'layout-sign-in' , devices: devlist, message: req.flash('secondFactor') })
         })
     })
 
 };
 
-
-function ensureTwoFactor(req, res, next){
-    if(req.session.hasTwoFactor == 'hotp'){
-        res.redirect(303, '/device-choice');
+function ensureSecondFactor(req, res, next) {
+    if(req.session.twoFactorPending = true){
+        if (req.session.secondFactor == 'hotp') { 
+            return next();
+        }
     }else{
-        next();
+        return next();
+    }
+    req.flash('secondFactor', 'You must pick a device to authenticate with or cancel the operation');
+    res.redirect('/device-choice')
+}
+
+function requiresLogin(req, res, next) {
+    if (req.session && req.session.userId) {
+      return next();
+    } else {
+      var err = new Error('You must be logged in to view this page.');
+      err.status = 401;
+      return next(err);
     }
 }

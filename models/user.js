@@ -1,7 +1,6 @@
 var mongoose = require('mongoose');
 var bcrypt   = require('bcrypt-nodejs');
 var Devices  = require('./device');
-//var passportLocalMongoose = require('passport-local-mongoose');
 
 var userSchema = new mongoose.Schema({
     //uid: {type: mongoose.Schema.Types.ObjectId, auto: true},
@@ -13,24 +12,6 @@ var userSchema = new mongoose.Schema({
     twofa: { type: Boolean, default: false }
 });
 
-// methods ======================
-// generating a hash
-userSchema.methods.generateHash = function(password) {
-    return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
-};
-
-// checking if password is valid
-userSchema.methods.validPassword = function(password) {
-    return bcrypt.compareSync(password, this.password);
-};
-
-userSchema.methods.has2fa = function(callback){
-
-    Devices.find({uid: this._id}).exec()      
-    .then(function(data){
-        callback(data.length > 0)
-    })
-}
 
 userSchema.pre('validate', function(next){
     var currentDate = new Date();
@@ -42,7 +23,61 @@ userSchema.pre('validate', function(next){
     }
     next();
 })
+// methods ======================
+// generating a hash
+userSchema.methods.generateHash = function(password) {
+    return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
+};
 
-//userSchema.plugin(passportLocalMongoose);
+// checking if password is valid
+userSchema.methods.validPassword = function(password) {
+    return bcrypt.compareSync(password, this.password);
+};
+
+userSchema.methods.getAllDevices = function(callback){
+    Devices.find({uid: this._id}, function(err, data){
+        callback(data)
+    })
+}
+
+userSchema.methods.has2fa = function(callback){
+    Devices.find({uid: this._id}).exec()      
+    .then(function(data){
+        callback(data.length > 0)
+    })
+}
+
+userSchema.pre('save', function (next) {
+    var user = this;
+    bcrypt.hash(user.password, 10, function (err, hash){
+        if (err) {
+            return next(err);
+        }
+        user.password = hash;
+        next();
+    })
+});
+
+userSchema.statics.authenticate = function (email, password, callback) {
+    User.findOne({ email: email })
+      .exec(function (err, user) {
+        console.log("THIS IS USER " + user)
+        if (err) {
+          return callback(err)
+        } else if (!user) {
+          var err = new Error('User not found.');
+          err.status = 401;
+          return callback(err);
+        }
+        bcrypt.compareSync(password, user.password, function (err, result) {
+          if (result === true) {
+            return callback(null, user);
+          } else {
+            return callback();
+          }
+        })
+      });
+  }
 
 module.exports = mongoose.model('User', userSchema);
+
