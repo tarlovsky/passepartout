@@ -12,9 +12,12 @@ const MAX_WAIT = 1012 * 60;
 module.exports = function(app){
     
     app.get('/', function (req, res) {
+        if(req.session.user){
+            var user = req.session.user
+        }
         res.render('homepage', {
             layout: 'main',
-            user: req.user
+            user: user
         })
     })
     
