@@ -36,6 +36,7 @@ exports.randomInt = function(min, max) {
 
 exports.passcodeGenerator = function(key, challenge, passCodeLength) {
 
+
     console.log(key)
     console.log(challenge)
     console.log(passCodeLength)
