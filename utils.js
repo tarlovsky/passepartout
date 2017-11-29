@@ -55,7 +55,7 @@ exports.passcodeGenerator = function(key, challenge, passCodeLength){
   
   // left-pad code
   if(passCodeLength == null || passCodeLength < PASSCODE_LENGTH || passCodeLength > MAX_PASSCODE_LENGTH){
-    passCodeLength = 6;
+    passCodeLength = PASSCODE_LENGTH;
   }
   
   code = new Array(passCodeLength + 1).join('0') + code.toString(10);
