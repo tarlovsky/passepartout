@@ -47,21 +47,20 @@ userSchema.methods.has2fa = function(callback){
     })
 }
 
-userSchema.pre('save', function (next) {
-    var user = this;
-    bcrypt.hash(user.password, 10, function (err, hash){
-        if (err) {
-            return next(err);
-        }
-        user.password = hash;
-        next();
-    })
-});
+// userSchema.pre('save', function (next) {
+//     var user = this;
+//     bcrypt.hash(user.password, 10, function (err, hash){
+//         if (err) {
+//             return next(err);
+//         }
+//         user.password = hash;
+//         next();
+//     })
+// });
 
 userSchema.statics.authenticate = function (email, password, callback) {
-    User.findOne({ email: email })
+    this.findOne({ email: email })
       .exec(function (err, user) {
-        console.log("THIS IS USER " + user)
         if (err) {
           return callback(err)
         } else if (!user) {
@@ -69,11 +68,20 @@ userSchema.statics.authenticate = function (email, password, callback) {
           err.status = 401;
           return callback(err);
         }
-        bcrypt.compareSync(password, user.password, function (err, result) {
+        bcrypt.compare(password, user.password, function (err, result) {
           if (result === true) {
-            return callback(null, user);
+            //check if user has 2fa
+            user.has2fa(function(result){
+                if(result){
+                    return callback(null, user, 'totp');
+                }else{
+                    return callback(null, user, null);
+                }
+            })
+            //user with no 2fa
+            
           } else {
-            return callback();
+            return callback(null, false, null);
           }
         })
       });

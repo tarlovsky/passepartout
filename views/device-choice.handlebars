@@ -15,7 +15,7 @@
     </div>
     {{#each devices}}
         <form class="form-signin" role="form" action="/do-second-factor" method="POST">
-            <input type="hidden" name="devid" value="{{devid}}"/>
+            <input type="hidden" name="devid" value="{{_id}}"/>
             <div class="alert bg-info">
                 <pre>{{deviceName}}<br/><code>Added: {{created_at}}</code></pre>
                 <button class="btn btn-lg btn-primary btn-block" type="submit">Choose this device</button>

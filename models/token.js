@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 
 var tokenSchema = mongoose.Schema({
     challange: { type: String, required: true },
+    awaitedAnswer: { type: String },
     did: { type: mongoose.Schema.Types.ObjectId, ref: 'Device' },
     uid: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     ts: { type: Number, required: true },

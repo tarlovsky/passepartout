@@ -1,12 +1,18 @@
 var LocalStrategy = require('passport-local').Strategy;
 var CustomStrategy = require('passport-custom').Strategy;
-var TwoFAStartegy = require('passport-2fa-totp').Strategy;
+
 var User = require('../models/user.js');
 
 
 //https://scotch.io/tutorials/easy-node-authentication-setup-and-local
 module.exports = function(passport){
-   
+    // =========================================================================
+    // passport session setup ==================================================
+    // =========================================================================
+    // required for persistent login sessions
+    // passport needs ability to serialize and unserialize users out of session
+
+    // used to serialize the user for the session
     passport.serializeUser(function(user, done) {
         done(null, user._id);
     });
@@ -18,7 +24,9 @@ module.exports = function(passport){
         });
     });
 
+   
     passport.use('local-signup', new LocalStrategy({
+        // by default, local strategy uses username and password, we will override with email
         usernameField : 'email',
         passwordField : 'password',
         passReqToCallback : true // allows us to pass back the entire request to the callback
@@ -55,7 +63,7 @@ module.exports = function(passport){
 
     }));
     
-    passport.use('local-login', new TwoFAStartegy({
+    passport.use('local-login', new LocalStrategy({
         usernameField : 'email',
         passwordField : 'password',
         passReqToCallback : true 
@@ -74,24 +82,23 @@ module.exports = function(passport){
                 return done(null, false, req.flash('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
             
             user.getAllDevices(function(data){
-                console.log(data)
+                //console.log(data)
             })
 
-            return done(null, user);
             
-            // if(user.has2fa(function(val){
-            //     if(val){
-            //         req.session.twoFactorPending = true;
-            //         req.session.user = user;
-                    
-            //     }
-            //     // all is well, return successful user
-            //     req.session.twoFactorPending = false;
-            //     return done(null, user);
-            // }));
+            if(user.has2fa(function(val){
+                
+                if(val){
+                    req.session.twoFactorPending = true;
+                    req.session.user = user;
+                    return done(null, null)
+                }
+                // all is well, return successful user
+                req.session.twoFactorPending = false;
+                return done(null, user);
+            }));
             
         });
-    }, function(user, done){
-        //console.log(user)
     }))
+
 };
