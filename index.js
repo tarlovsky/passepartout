@@ -4,9 +4,7 @@ var bodyparser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var http = require('http');
 var mongoose = require('mongoose');
-
 var flash = require('connect-flash');
-var passport = require('passport');
 var session = require('express-session');
 var https = require('https');
 var fs = require('fs')
@@ -16,12 +14,9 @@ var crypto = require('crypto');
 var key = fs.readFileSync('encryption/localhost.key.pem');
 var cert = fs.readFileSync('encryption/localhost.cert.pem');
 var ca = fs.readFileSync('encryption/ca-chain.cert.pem');
-
 var mongoose = require('mongoose');
 var configDB = require('./config/database.js');
 mongoose.connect(configDB.url);
-
-require('./config/passport')(passport);
 
 var options = {
     key: key,
@@ -53,12 +48,10 @@ app.use(bodyparser());
 app.use(express.methodOverride());
 app.use(session({ secret: '12345678aA!' }));
 app.use(flash());
-app.use(passport.initialize());
-app.use(passport.session());
-
 app.use(app.router);
 
-require('./routes.js')(app, passport);
+
+require('./routes.js')(app);
 var server = http.Server(app);
 var port = process.env.PORT || 8080;
 server.listen(port);

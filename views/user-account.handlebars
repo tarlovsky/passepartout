@@ -22,9 +22,23 @@
             
             <!--<p class="blog-post-meta">Last access January 1, 2014 by <a href="#">Mark</a></p>-->
             <p><a href="/attach-device">Attach</a> or detatch your authentication devices here.</p>
+            <div class="containter">
             {{#each devices}}
-              <pre>{{deviceName}}<br/><code>Added: {{created_at}} </code></pre>
+              <div class="row">
+                <div class="col-md-8">
+                  <pre><b>{{deviceName}}</b><br/><code>Added: {{created_at}} </code>
+                </div>
+                <div class="col-md-4">
+                  <form method="post" action="/detatch-device">
+                    <input type="hidden" name="devid" value="{{_id}}"/>
+                    <input type="submit" class="btn btn-primary" 
+                        style="text-align: center; vertical-align: middle;cursor:pointer"
+                        value="x"/>
+                  </form>
+                </div>
+              </div>
             {{/each}}
+            </div>
 
             
             

@@ -1,11 +1,21 @@
 <div class="container">
     {{#if message.length}}
+    <div class="row">
       <div class="alert alert-danger">{{message}}</div>
+    </div>
     {{/if}}
-
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3 pull-right">
+                <form class="blog-nav-item" method="post" action="/sign-out">
+                    <button class="btn btn-lg btn-primary btn-block" type="submit">Cancel Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
     {{#each devices}}
         <form class="form-signin" role="form" action="/do-second-factor" method="POST">
-            <input type="hidden" name="devid" value="{{devid}}"/>
+            <input type="hidden" name="devid" value="{{_id}}"/>
             <div class="alert bg-info">
                 <pre>{{deviceName}}<br/><code>Added: {{created_at}}</code></pre>
                 <button class="btn btn-lg btn-primary btn-block" type="submit">Choose this device</button>
