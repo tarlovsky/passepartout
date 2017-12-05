@@ -42,7 +42,7 @@ module.exports = function(app){
                 qrimage = require('qr-image')
                 ;
             var u = req.session.user;
-            console.log(utils.randomKey(48))
+            
             var secretKey = utils.randomKey(48);
             
             const challenge = utils.getChallenge();
@@ -64,10 +64,10 @@ module.exports = function(app){
             });
 
             // Generate qr for the user's device
-            var otpUrl = 'otpauth://hotp/'+ 'programist:' + u.email + 
+            var otpUrl = 'otpauth://hotp/'+ 'passepartout:' + u.email + 
             '?secret=' + secretKey + 
             '&challange=' + challenge + 
-            '&issuer=programist' + 
+            '&issuer=passepartout' + 
             '&pinlength=' + pin_len;
             
             var qr_image_data = new Buffer(qrimage.imageSync(otpUrl, {type:'png'})).toString('base64');
@@ -85,7 +85,8 @@ module.exports = function(app){
                 qr: qr_image_data,
                 devid: did,
                 //REMOVE PRODUCTION
-                answer: awaited_answer
+                //USE ON DEBUG
+                //answer: awaited_answer
             })
         
     })
@@ -186,9 +187,7 @@ module.exports = function(app){
                     res.redirect('/device-choice')
                     return;
                 }else{
-                    console.log(result)
                     req.session.user = result
-                    console.log(req.session.user)
                     res.redirect(303, '/user-account')
                     return;
                 }
@@ -245,7 +244,7 @@ module.exports = function(app){
             const challenge = utils.getChallenge();
 
             var pin_len = utils.randomInt(6,9)
-            
+
             const awaited_answer = utils.passcodeGenerator(deviceKey, challenge, pin_len);
             // Generate qr for the screen
             var otpUrl = 'otpauth://hotp/'+ 'programist:' + req.session.pendingUser.email + 
@@ -275,7 +274,7 @@ module.exports = function(app){
                 qr: qr_image_data,
                 tokenid : t._id,
                 //remove after tests
-                answer: awaited_answer
+                //answer: awaited_answer
             });
         })
         
