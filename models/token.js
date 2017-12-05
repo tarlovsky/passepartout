@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var bcrypt   = require('bcrypt-nodejs');
 
 var tokenSchema = mongoose.Schema({
     challange: { type: String, required: true },
@@ -13,10 +14,16 @@ tokenSchema.pre('validate', function(next){
     var currentDate = new Date();
     this.ts = currentDate.getTime()/1000;
 
+    this.awaitedAnswer = bcrypt.hashSync(this.awaitedAnswer, bcrypt.genSaltSync(8), null);
+
     if(!this.created_at){
         this.created_at = currentDate;
     }
     next();
 })
+
+tokenSchema.methods.validateAnswer = function(ans){
+    return res = bcrypt.compareSync(ans, this.awaitedAnswer)
+}
 
 module.exports = mongoose.model('Token', tokenSchema);

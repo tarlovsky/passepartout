@@ -4,6 +4,7 @@
     "description": "SIRS project",
     "main": "index.js",
     "dependencies": {
+        "bcrypt": "^1.0.3",
         "bcrypt-nodejs": "0.0.3",
         "bluebird": "^3.5.1",
         "body-parser": "^1.18.2",

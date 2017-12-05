@@ -19,18 +19,29 @@
                 <img src="data:image/png;base64,{{qr}}"/>
             </div>
             <p>Don't worry, the system will <strong>only register your device</strong> as a second factor of authentication <strong>once you've answerd:</strong></p>
-            <p id="timer-text">Hurry you only have <strong id="timer">60</strong> seconds!</p>
+            <input type="hidden" id="time_limit" value="{{time_limit}}"/>
+            <p id="timer-text">Hurry, you only have <strong id="timer_mins"></strong> minutes and <strong id="timer_secs"></strong> seconds!</p>
             <script type="text/javascript">
-                var el = document.getElementById("timer"),
-                    secs = 60;
-
+                var tm = document.getElementById("timer_mins"),
+                    ts = document.getElementById("timer_secs"),
+                    s = new Date(parseInt(document.getElementById('time_limit').value,10)),
+                    secs = s.getSeconds(),
+                    mins = s.getMinutes();
+                console.log(s)
+                console.log(secs)
+                console.log(mins)
                 function countDown() {
-                    if (secs) {
+                    if (secs || mins) {
                         setTimeout(countDown, 1000);
                     }
-                    el.innerHTML = secs;
+                    tm.innerHTML = mins;
+                    ts.innerHTML = (secs.toString().length < 2 ? "0" + secs : secs);
                     secs -= 1;
-                    if(secs == 0){
+                    if (secs < 0) {
+                      mins -= 1;
+                      secs = 59;
+                    }
+                    if(mins == 0 && secs == 0){
                         document.getElementById("timer-text").innerHTML = "You're out of time. Please refresh the page to generate a new key!";
                     }
                 }

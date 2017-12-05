@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var bcrypt = require('bcrypt');
 
 var deviceSchema = mongoose.Schema({
     //_id: {type: mongoose.Schema.Types.ObjectId, auto: true},
