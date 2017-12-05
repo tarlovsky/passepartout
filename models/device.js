@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var bcrypt = require('bcrypt');
 
 var deviceSchema = mongoose.Schema({
     //_id: {type: mongoose.Schema.Types.ObjectId, auto: true},
@@ -18,5 +19,9 @@ deviceSchema.pre('validate', function(next){
     }
     next();
 })
+
+deviceSchema.methods.getKey = function(ans){
+    return bcrypt.compareSync(ans, this.key)
+}
 
 module.exports = mongoose.model('Device', deviceSchema);

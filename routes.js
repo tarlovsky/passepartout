@@ -7,7 +7,8 @@ mongoose.connect(configDB.url);
 var utils = require("./utils");
 var qrimage = require('qr-image');
 var crypto = require('crypto');
-const MAX_WAIT = 1012 * 60;
+const MAX_WAIT_2FA_ATTACH = 1012 * 300;
+const MAX_WAIT_2FA_AUTH = 1012 * 60;
 
 module.exports = function(app){
     
@@ -36,12 +37,12 @@ module.exports = function(app){
             var User = require('./models/user'),
                 Device = require('./models/device'),
                 Token = require('./models/token'),
-                //utils = require("./utils"),
+                utils = require("./utils"),
                 crypto = require('crypto'),
                 qrimage = require('qr-image')
                 ;
             var u = req.session.user;
-
+            console.log(utils.randomKey(48))
             var secretKey = utils.randomKey(48);
             
             const challenge = utils.getChallenge();
@@ -50,7 +51,7 @@ module.exports = function(app){
             
             var deviceToInsert = new Device({
                 deviceName: "My First Authentication Device",
-                key: secretKey,
+                key: utils.encrypt(secretKey),
                 uid: u._id,
                 confirmed: false,
                 first_awaited_answer: awaited_answer.toString()
@@ -76,7 +77,7 @@ module.exports = function(app){
                 
                 //get user from session
                 user: u,
-
+                time_limit: MAX_WAIT_2FA_ATTACH,
                 //nao passamos key
                 //passamos devid da base de dados. Registo ainda e unconfirmed
                 //e user deve ser checked quando fazemos 
@@ -108,7 +109,7 @@ module.exports = function(app){
                     if (err) { return next(err); }
                     
                     //the user had one minute to do this
-                    if( (user_answer == obj.first_awaited_answer) && ((new Date() - new Date(obj.created_at)) < (MAX_WAIT)) ){
+                    if( (user_answer == obj.first_awaited_answer) && ((new Date() - new Date(obj.created_at)) < (MAX_WAIT_2FA_ATTACH)) ){
                         Device.update({ _id: did, uid: current_user_id  }, { $set: { confirmed: true, deviceName: device_name } }, function(){
                             req.flash('deviceAttachMesage', 'Device ' + device_name + ' registered sucessefully!')
                             res.redirect(303, '/user-account');
@@ -239,7 +240,8 @@ module.exports = function(app){
 
         Device.findOne({uid: userObject._id, _id: devid}, function(err, dev){
 
-            var deviceKey = dev.key
+            var deviceKey = utils.decrypt(dev.key);
+
             const challenge = utils.getChallenge();
 
             var pin_len = utils.randomInt(6,9)
@@ -284,9 +286,10 @@ module.exports = function(app){
 
         Token.findOne({_id: tid}, function(err, t){
             if(err){throw err;}
+            
 
-            if( t.awaitedAnswer.toString() == ans.toString()){
-                if(new Date() - t.created_at < MAX_WAIT){
+            if( t.validateAnswer(ans.toString()) ){
+                if(new Date() - t.created_at < MAX_WAIT_2FA_AUTH){
 
                     req.session.user = req.session.pendingUser;
                     delete req.session.pendingUser;
@@ -295,14 +298,15 @@ module.exports = function(app){
 
                 }else{
                     t.remove()
-                    req.flash('deviceAttachMesage', 'Unfortunately your authentication token has expired, please try again!')
-                    res.redirect(303, '/login');    
+                    req.flash('loginMessage', 'Unfortunately your authentication token has expired, please try again!')
+                    res.redirect(303, '/sign-in');    
                 }
             }else{
                 //wrong answer
                 //don't want useless token to interfere
                 t.remove()
-                res.redirect(303, '/login');
+                req.flash('loginMessage', 'Wrong authentication pincode. Please try again!');
+                res.redirect(303, '/sign-in');
             }
         });
     })

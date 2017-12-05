@@ -1,6 +1,22 @@
 var crypto = require('crypto');
 var Promise = require('bluebird');
+var algorithm = 'aes-256-ctr';
 var randomNumber = require("random-number-csprng");
+var KEY_ENC_KEY = "1569147e7d2b36e52ced9cbb8bb4fb1d6057c5cb1956134e650310e2acff3968d646eae3358a0da596a699c6d2029ecd"
+
+exports.encrypt = function(text){
+  var cipher = crypto.createCipher(algorithm, KEY_ENC_KEY)
+  var crypted = cipher.update(text,'utf8','hex')
+  crypted += cipher.final('hex');
+  return crypted;
+}
+ 
+exports.decrypt = function(text){
+  var decipher = crypto.createDecipher(algorithm, KEY_ENC_KEY)
+  var dec = decipher.update(text,'hex','utf8')
+  dec += decipher.final('utf8');
+  return dec;
+}
 
 exports.randomKey = function(len) {
   //https://gist.github.com/joepie91/7105003c3b26e65efcea63f3db82dfba
