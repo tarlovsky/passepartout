@@ -239,12 +239,13 @@ module.exports = function(app){
         var devid = req.body.devid;
 
         Device.findOne({uid: userObject._id, _id: devid}, function(err, dev){
-
+            
             var deviceKey = utils.decrypt(dev.key);
 
             const challenge = utils.getChallenge();
 
             var pin_len = utils.randomInt(6,9)
+            
             const awaited_answer = utils.passcodeGenerator(deviceKey, challenge, pin_len);
             // Generate qr for the screen
             var otpUrl = 'otpauth://hotp/'+ 'programist:' + req.session.pendingUser.email + 

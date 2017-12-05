@@ -20,8 +20,4 @@ deviceSchema.pre('validate', function(next){
     next();
 })
 
-deviceSchema.methods.getKey = function(ans){
-    return bcrypt.compareSync(ans, this.key)
-}
-
 module.exports = mongoose.model('Device', deviceSchema);
