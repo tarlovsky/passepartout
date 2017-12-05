@@ -1,6 +1,4 @@
 var crypto = require('crypto');
-var Promise = require('bluebird');
-var randomNumber = require("random-number-csprng");
 
 exports.randomKey = function(len) {
     //https://gist.github.com/joepie91/7105003c3b26e65efcea63f3db82dfba
@@ -35,12 +33,6 @@ exports.randomInt = function(min, max) {
 }
 
 exports.passcodeGenerator = function(key, challenge, passCodeLength) {
-
-
-    console.log(key)
-    console.log(challenge)
-    console.log(passCodeLength)
-
     var MAX_PASSCODE_LENGTH = 9,
         PASSCODE_LENGTH = 6,
         codeLength;

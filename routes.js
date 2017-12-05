@@ -62,7 +62,7 @@ module.exports = function(app) {
         });
 
         // Generate qr for the user's device
-        var otpUrl = 'otpauth://hotp/' + 'programist:' + u.email +
+        var otpUrl = 'otpauth://hotp/' + 'passepartout:' + u.email +
             '?secret=' + secretKey +
             '&challenge=' + challenge +
             '&issuer=programist' +
@@ -246,9 +246,9 @@ module.exports = function(app) {
             var pin_len = utils.randomInt(6, 9)
             const awaited_answer = utils.passcodeGenerator(deviceKey, challenge, pin_len);
             // Generate qr for the screen
-            var otpUrl = 'otpauth://hotp/' + 'programist:' + req.session.pendingUser.email +
+            var otpUrl = 'otpauth://hotp/' + 'passepartout:' + req.session.pendingUser.email +
                 '?challenge=' + challenge +
-                '&issuer=programist' +
+                '&issuer=passepartout' +
                 '&pinlength=' + pin_len;
             const qr_image_data = new Buffer(qrimage.imageSync(otpUrl, { type: 'png' })).toString('base64');
 
