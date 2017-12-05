@@ -65,7 +65,7 @@ module.exports = function(app) {
         // Generate qr for the user's device
         var otpUrl = 'otpauth://hotp/' + 'passepartout:' + u.email +
             '?secret=' + secretKey +
-            '&challange=' + challenge +
+            '&challenge=' + challenge +
             '&issuer=passepartout' +
             '&pinlength=' + pin_len;
 
