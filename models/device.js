@@ -1,3 +1,7 @@
+/**
+ * Database file for each device
+ */
+
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt');
 

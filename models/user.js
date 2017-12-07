@@ -1,3 +1,7 @@
+/**
+ * Database file for the user model
+ */
+
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 var Devices = require('./device');
@@ -29,6 +33,7 @@ userSchema.methods.generateHash = function(password) {
 };
 
 // checking if password is valid
+// Bcrypt's compare sync knows how to chop out the salt from it's bcrypt.genSaltSync(8) generated hash
 userSchema.methods.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
 };
@@ -45,17 +50,6 @@ userSchema.methods.has2fa = function(callback) {
             callback(data.length > 0)
         })
 }
-
-// userSchema.pre('save', function (next) {
-//     var user = this;
-//     bcrypt.hash(user.password, 10, function (err, hash){
-//         if (err) {
-//             return next(err);
-//         }
-//         user.password = hash;
-//         next();
-//     })
-// });
 
 userSchema.statics.authenticate = function(email, password, callback) {
     this.findOne({ email: email })
