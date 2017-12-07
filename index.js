@@ -19,6 +19,10 @@ var mongoose = require('mongoose');
 var configDB = require('./config/database.js');
 mongoose.connect(configDB.url);
 
+// options used for local self signed certificats
+// at the moment we use HEROKU's SSL certificate 
+// because to import our own we had to pay a fee.
+// the cert chain is inside the ./encryption directory
 var options = {
     key: key,
     cert: cert,

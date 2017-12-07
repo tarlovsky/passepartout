@@ -1,3 +1,8 @@
+/**
+ * Database file for authentication tokens
+ */
+
+
 var mongoose = require('mongoose');
 var bcrypt   = require('bcrypt-nodejs');
 
@@ -12,7 +17,7 @@ var tokenSchema = mongoose.Schema({
 
 tokenSchema.pre('validate', function(next){
     var currentDate = new Date();
-    this.ts = currentDate.getTime()/1000;
+    this.ts = currentDate.getTime() / 1000;
 
     this.awaitedAnswer = bcrypt.hashSync(this.awaitedAnswer, bcrypt.genSaltSync(8), null);
 
@@ -21,7 +26,7 @@ tokenSchema.pre('validate', function(next){
     }
     next();
 })
-
+// Bcrypt's compare sync knows how to chop out the salt from it's bcrypt.genSaltSync(8) generated hash
 tokenSchema.methods.validateAnswer = function(ans){
     return res = bcrypt.compareSync(ans, this.awaitedAnswer)
 }
