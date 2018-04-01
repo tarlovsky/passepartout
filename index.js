@@ -1,4 +1,3 @@
-
 var path = require('path');
 var express = require('express');
 var bodyparser = require('body-parser');
@@ -13,8 +12,8 @@ var qr = require('qr-image');
 var base32 = require('thirty-two');
 var crypto = require('crypto');
 var key = fs.readFileSync('encryption/localhost.key.pem');
-var cert = fs.readFileSync( 'encryption/localhost.cert.pem' );
-var ca = fs.readFileSync( 'encryption/ca-chain.cert.pem' );
+var cert = fs.readFileSync('encryption/localhost.cert.pem');
+var ca = fs.readFileSync('encryption/ca-chain.cert.pem');
 var mongoose = require('mongoose');
 var configDB = require('./config/database.js');
 mongoose.connect(configDB.url);
@@ -33,30 +32,31 @@ var options = {
 var app = express();
 
 var handlebars = require('express3-handlebars').create({
-     defaultLayout:'main',
-     helpers: {
-        foo: function (){ return "<h2>FOO HELPER</f2>"},
+    defaultLayout: 'main',
+    helpers: {
+        foo: function() { return "<h2>FOO HELPER</f2>" },
 
-        section: function(name, options){
-            if(!this._sections) this._sections = {};
+        section: function(name, options) {
+            if (!this._sections) this._sections = {};
             this._sections[name] = options.fn(this);
             return null;
         }
-     }
+    }
 });
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 app.use(express.static('public'))
-//app.use(express.logger());
+    //app.use(express.logger());
 app.use(express.cookieParser());
 app.use(bodyparser());
 app.use(express.methodOverride());
-app.use(session({secret: '12345678aA!'}));
+app.use(session({ secret: '12345678aA!' }));
 app.use(flash());
 app.use(app.router);
 
 
 require('./routes.js')(app);
-https.createServer(options, app).listen(8080)
-
-
+var server = http.Server(app);
+var port = process.env.PORT || 8080;
+server.listen(port);
+console.log("Started on port: " + port);
