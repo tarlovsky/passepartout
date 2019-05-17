@@ -1,13 +1,13 @@
 ## Passepartout
 
 ### Web Server Stack
-```js
-    -NodeJS 
-    -MongoDB with Mongoose connector
-    -ExpressJS
-    -crypto (node native package)
-    -qr-image (npm package)
-```
+
+- NodeJS 
+- MongoDB with Mongoose connector
+- ExpressJS
+- crypto (node native package)
+- qr-image (npm package)
+
 
 ## Installation
 Need to configure a MongoDB database connection which can be done with [mLab](https://mlab.com) or using a local machine database.
